@@ -8,10 +8,11 @@
 import SwiftUI
 
 @main
-struct journalApp88App: App {
+struct JournaliApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            SplashView()
+                .preferredColorScheme(.dark)   // whole app in dark mode
         }
     }
 }
