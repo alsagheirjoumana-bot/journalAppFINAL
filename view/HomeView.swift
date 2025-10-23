@@ -1,28 +1,16 @@
-//
-//  SwiftUIView.swift
-//  journalApp88
-//
-//  Created by Joumana Alsagheir on 22/10/2025 .
-//
-
 import SwiftUI
 
 struct HomeView: View {
-    @StateObject private var vm = HomeViewModel(seedWithSamples: true)
 
+    @StateObject private var vm = HomeViewModel(seedWithSamples: true)
     @State private var showEditor = false
     @State private var editingEntry: JournalEntry? = nil
+    @State private var showDeleteAlert = false
 
-    // Use boolean dialog + keep selected item separately
-    @State private var showDeleteDialog = false
-    @State private var deleteTarget: JournalEntry? = nil
-
-    // Layout tokens
     private enum UI {
         static let headerTop: CGFloat   = 6
         static let headerSide: CGFloat  = 20
         static let rowSide: CGFloat     = 20
-        static let rowSpacing: CGFloat  = 22
         static let firstRowTop: CGFloat = 12
         static let pillHPad: CGFloat    = 16
         static let pillVPad: CGFloat    = 10
@@ -39,35 +27,44 @@ struct HomeView: View {
                 if vm.filteredEntries.isEmpty {
                     EmptyStateView()
                 } else {
-                    ScrollView {
-                        VStack(spacing: UI.rowSpacing) {
+                    List {
+                        Section {
                             ForEach(vm.filteredEntries) { entry in
                                 EntryRow(entry: entry) {
                                     vm.toggleBookmark(id: entry.id)
                                 }
-                                .padding(.horizontal, UI.rowSide)
                                 .onTapGesture {
                                     editingEntry = entry
                                     showEditor = true
                                 }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                     Button(role: .destructive) {
-                                        deleteTarget = entry
-                                        showDeleteDialog = true
+                                        vm.requestDelete(entry)
+                                        showDeleteAlert = true
                                     } label: {
                                         Image(systemName: "trash")
                                     }
-                                    .tint(.red) // round red bubble
+                                    .tint(.red)
                                 }
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
+                                .padding(.horizontal, UI.rowSide)
+                                .padding(.top, UI.firstRowTop)
                             }
-                            .padding(.top, UI.firstRowTop)
-                            Color.clear.frame(height: 40) // space for bottom search
+
+                            Color.clear
+                                .frame(height: 40)
+                                .listRowSeparator(.hidden)
+                                .listRowBackground(Color.clear)
                         }
                     }
+                    .listStyle(.plain)
+                    .scrollContentBackground(.hidden)
                 }
             }
         }
-        // Bottom liquid-glass search
+
+        // Bottom glass search
         .safeAreaInset(edge: .bottom) {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
@@ -81,33 +78,25 @@ struct HomeView: View {
             .padding(.horizontal, 14)
             .background(.ultraThinMaterial)
             .clipShape(Capsule())
-            .overlay(Capsule().stroke(.white.opacity(0.06), lineWidth: 1).allowsHitTesting(false))
+            .overlay(
+                Capsule()
+                    .stroke(.white.opacity(0.06), lineWidth: 1)
+                    .allowsHitTesting(false)
+            )
             .shadow(color: .black.opacity(0.35), radius: 18, x: 0, y: 8)
             .padding(.horizontal, UI.headerSide)
             .padding(.bottom, 8)
         }
 
-        // Delete confirmation (boolean overload — very stable)
-        .confirmationDialog(
-            "Delete Journal?",
-            isPresented: $showDeleteDialog,
-            titleVisibility: .visible
-        ) {
-            Button("Delete", role: .destructive) {
-                if let item = deleteTarget {
-                    vm.requestDelete(item)
-                    vm.confirmDelete()
-                }
-                deleteTarget = nil
-            }
-            Button("Cancel", role: .cancel) {
-                deleteTarget = nil
-            }
+        // iOS alert
+        .alert("Delete Journal?", isPresented: $showDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) { vm.confirmDelete() }
         } message: {
             Text("Are you sure you want to delete this journal?")
         }
 
-        // Editor sheet (new or edit)
+        // Editor sheet
         .sheet(isPresented: $showEditor) {
             EditorView(
                 title: editingEntry?.title ?? "",
@@ -132,7 +121,7 @@ struct HomeView: View {
         }
     }
 
-    // Header with glass pill (Sort + Plus)
+    // MARK: - Header with working Sort + Plus
     private var header: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text("Journal")
@@ -141,8 +130,8 @@ struct HomeView: View {
 
             Spacer(minLength: 0)
 
+            // Glass pill
             HStack(spacing: 14) {
-                // Popover picker (system checkmark style)
                 Menu {
                     Picker("Sort", selection: $vm.sort) {
                         Text("Sort by Bookmark").tag(HomeSort.byBookmark)
@@ -153,6 +142,7 @@ struct HomeView: View {
                         .font(.system(size: 18, weight: .semibold))
                         .frame(width: 24, height: 24)
                         .foregroundStyle(.primary)
+                        .accessibilityLabel("Sort")
                 }
                 .buttonStyle(.plain)
 
@@ -165,6 +155,7 @@ struct HomeView: View {
                         .font(.system(size: 18, weight: .bold))
                         .frame(width: 24, height: 24)
                         .foregroundStyle(.primary)
+                        .accessibilityLabel("Add Entry")
                 }
                 .buttonStyle(.plain)
             }
@@ -172,14 +163,21 @@ struct HomeView: View {
             .padding(.horizontal, UI.pillHPad)
             .background(.ultraThickMaterial)
             .clipShape(Capsule())
-            .overlay(Capsule().stroke(.white.opacity(0.08), lineWidth: 1).allowsHitTesting(false))
+            // IMPORTANT: make overlays non-hit-testable so taps reach buttons
+            .overlay(
+                Capsule()
+                    .stroke(.white.opacity(0.08), lineWidth: 1)
+                    .allowsHitTesting(false)
+            )
             .shadow(color: .black.opacity(0.55), radius: 22, x: 0, y: 10)
             .overlay(
                 Capsule()
-                    .fill(LinearGradient(colors: [.white.opacity(0.10), .clear],
-                                         startPoint: .top, endPoint: .center))
+                    .fill(
+                        LinearGradient(colors: [.white.opacity(0.10), .clear],
+                                       startPoint: .top, endPoint: .center)
+                    )
                     .blendMode(.plusLighter)
-                    .allowsHitTesting(false)
+                    .allowsHitTesting(false)     // ← this was blocking taps
             )
             .background(
                 Capsule()
