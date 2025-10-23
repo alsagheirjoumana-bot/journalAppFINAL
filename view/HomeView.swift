@@ -2,14 +2,7 @@
 //  SwiftUIView.swift
 //  journalApp88
 //
-//  Created by Joumana Alsagheir on 22/10/2025.
-//
-
-//
-//  HomeView.swift
-//  journalApp88
-//
-//  Created by Joumana Alsagheir on 22/10/2025.
+//  Created by Joumana Alsagheir on 22/10/2025 .
 //
 
 import SwiftUI
@@ -19,6 +12,22 @@ struct HomeView: View {
 
     @State private var showEditor = false
     @State private var editingEntry: JournalEntry? = nil
+
+    // Use boolean dialog + keep selected item separately
+    @State private var showDeleteDialog = false
+    @State private var deleteTarget: JournalEntry? = nil
+
+    // Layout tokens
+    private enum UI {
+        static let headerTop: CGFloat   = 6
+        static let headerSide: CGFloat  = 20
+        static let rowSide: CGFloat     = 20
+        static let rowSpacing: CGFloat  = 22
+        static let firstRowTop: CGFloat = 12
+        static let pillHPad: CGFloat    = 16
+        static let pillVPad: CGFloat    = 10
+        static let pillYOffset: CGFloat = -2
+    }
 
     var body: some View {
         ZStack {
@@ -31,61 +40,74 @@ struct HomeView: View {
                     EmptyStateView()
                 } else {
                     ScrollView {
-                        VStack(spacing: 16) {
+                        VStack(spacing: UI.rowSpacing) {
                             ForEach(vm.filteredEntries) { entry in
                                 EntryRow(entry: entry) {
                                     vm.toggleBookmark(id: entry.id)
                                 }
-                                .padding(.horizontal, 16)
+                                .padding(.horizontal, UI.rowSide)
                                 .onTapGesture {
                                     editingEntry = entry
                                     showEditor = true
                                 }
                                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                                     Button(role: .destructive) {
-                                        vm.requestDelete(entry)
+                                        deleteTarget = entry
+                                        showDeleteDialog = true
                                     } label: {
                                         Image(systemName: "trash")
                                     }
-                                    .tint(.red)
+                                    .tint(.red) // round red bubble
                                 }
                             }
-
-                            Color.clear.frame(height: 40)
+                            .padding(.top, UI.firstRowTop)
+                            Color.clear.frame(height: 40) // space for bottom search
                         }
-                        .padding(.top, 8)
                     }
                 }
             }
         }
-        // bottom glass search
+        // Bottom liquid-glass search
         .safeAreaInset(edge: .bottom) {
             HStack(spacing: 8) {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                 TextField("Search", text: $vm.searchText)
                     .textInputAutocapitalization(.never)
                     .disableAutocorrection(true)
+                    .foregroundStyle(.primary)
                 Image(systemName: "mic.fill").foregroundStyle(.secondary)
             }
-            .glassCapsuleField()
-            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 14)
+            .background(.ultraThinMaterial)
+            .clipShape(Capsule())
+            .overlay(Capsule().stroke(.white.opacity(0.06), lineWidth: 1).allowsHitTesting(false))
+            .shadow(color: .black.opacity(0.35), radius: 18, x: 0, y: 8)
+            .padding(.horizontal, UI.headerSide)
             .padding(.bottom, 8)
         }
 
-        // delete confirmation
+        // Delete confirmation (boolean overload — very stable)
         .confirmationDialog(
             "Delete Journal?",
-            isPresented: .constant(vm.showingDeleteConfirmFor != nil),
-            titleVisibility: .visible,
-            presenting: vm.showingDeleteConfirmFor
-        ) { _ in
-            Button("Delete", role: .destructive) { vm.confirmDelete() }
-            Button("Cancel", role: .cancel) { vm.showingDeleteConfirmFor = nil }
-        } message: { _ in
+            isPresented: $showDeleteDialog,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                if let item = deleteTarget {
+                    vm.requestDelete(item)
+                    vm.confirmDelete()
+                }
+                deleteTarget = nil
+            }
+            Button("Cancel", role: .cancel) {
+                deleteTarget = nil
+            }
+        } message: {
             Text("Are you sure you want to delete this journal?")
         }
 
-        // editor sheet
+        // Editor sheet (new or edit)
         .sheet(isPresented: $showEditor) {
             EditorView(
                 title: editingEntry?.title ?? "",
@@ -100,8 +122,7 @@ struct HomeView: View {
                 },
                 onCancel: {
                     if let e = editingEntry, e.title.isEmpty && e.body.isEmpty {
-                        vm.requestDelete(e)
-                        vm.confirmDelete()
+                        vm.requestDelete(e); vm.confirmDelete()
                     }
                     showEditor = false
                 }
@@ -111,7 +132,7 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Header (title + glass pill with sort & plus)
+    // Header with glass pill (Sort + Plus)
     private var header: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text("Journal")
@@ -120,11 +141,13 @@ struct HomeView: View {
 
             Spacer(minLength: 0)
 
-            HStack(spacing: 12) {
-                // sort menu
+            HStack(spacing: 14) {
+                // Popover picker (system checkmark style)
                 Menu {
-                    Button("Sort by Bookmark") { vm.sort = .byBookmark }
-                    Button("Sort by Entry Date") { vm.sort = .byDate }
+                    Picker("Sort", selection: $vm.sort) {
+                        Text("Sort by Bookmark").tag(HomeSort.byBookmark)
+                        Text("Sort by Entry Date").tag(HomeSort.byDate)
+                    }
                 } label: {
                     Image(systemName: "line.3.horizontal.decrease")
                         .font(.system(size: 18, weight: .semibold))
@@ -133,7 +156,6 @@ struct HomeView: View {
                 }
                 .buttonStyle(.plain)
 
-                // add new entry
                 Button {
                     let new = vm.createEmptyEntry()
                     editingEntry = new
@@ -146,24 +168,31 @@ struct HomeView: View {
                 }
                 .buttonStyle(.plain)
             }
-            .padding(.vertical, 10)
-            .padding(.horizontal, 14)
+            .padding(.vertical, UI.pillVPad)
+            .padding(.horizontal, UI.pillHPad)
             .background(.ultraThickMaterial)
             .clipShape(Capsule())
-            .overlay(Capsule().stroke(.white.opacity(0.07), lineWidth: 1))
-            .shadow(color: .black.opacity(0.5), radius: 22, x: 0, y: 10)
+            .overlay(Capsule().stroke(.white.opacity(0.08), lineWidth: 1).allowsHitTesting(false))
+            .shadow(color: .black.opacity(0.55), radius: 22, x: 0, y: 10)
             .overlay(
                 Capsule()
-                    .fill(
-                        LinearGradient(colors: [.white.opacity(0.10), .clear],
-                                       startPoint: .top,
-                                       endPoint: .center)
-                    )
+                    .fill(LinearGradient(colors: [.white.opacity(0.10), .clear],
+                                         startPoint: .top, endPoint: .center))
                     .blendMode(.plusLighter)
+                    .allowsHitTesting(false)
             )
+            .background(
+                Capsule()
+                    .fill(Color.black.opacity(0.35))
+                    .blur(radius: 18)
+                    .offset(y: 2)
+                    .allowsHitTesting(false)
+            )
+            .compositingGroup()
+            .offset(y: UI.pillYOffset)
         }
-        .padding(.top, 2)
-        .padding(.horizontal, 16)
+        .padding(.top, UI.headerTop)
+        .padding(.horizontal, UI.headerSide)
     }
 }
 
