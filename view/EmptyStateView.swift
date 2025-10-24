@@ -14,14 +14,14 @@ struct EmptyStateView: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            Image(imageName)
+            Image("emptybook")
                 .resizable()
                 .scaledToFit()
                 .frame(width: 140, height: 140)
                 .accessibilityHidden(true)
 
             Text(title)
-                .font(.system(size: 22, weight: .semibold, design: .rounded))
+            .font(.system(size: 22, weight: .semibold, design: .rounded))
                 .foregroundStyle(Color.lavender)
 
             Text(message)

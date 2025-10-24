@@ -66,24 +66,27 @@ struct HomeView: View {
 
         // Bottom glass search
         .safeAreaInset(edge: .bottom) {
-            HStack(spacing: 8) {
-                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.secondary)
+
                 TextField("Search", text: $vm.searchText)
                     .textInputAutocapitalization(.never)
                     .disableAutocorrection(true)
+                    .textFieldStyle(.plain)
                     .foregroundStyle(.primary)
-                Image(systemName: "mic.fill").foregroundStyle(.secondary)
+                    .tint(Color("lightLavender")) // cursor
+
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(.secondary)
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 14)
-            .background(.ultraThinMaterial)
-            .clipShape(Capsule())
-            .overlay(
-                Capsule()
-                    .stroke(.white.opacity(0.06), lineWidth: 1)
-                    .allowsHitTesting(false)
-            )
-            .shadow(color: .black.opacity(0.35), radius: 18, x: 0, y: 8)
+            .glassCapsuleField()           // ← use helper
+            .saturation(0.98)              // tiny tone tweak to match your mock
+            .brightness(-0.02)
             .padding(.horizontal, UI.headerSide)
             .padding(.bottom, 8)
         }
@@ -130,6 +133,7 @@ struct HomeView: View {
 
             Spacer(minLength: 0)
 
+            
             // Glass pill
             HStack(spacing: 14) {
                 Menu {
@@ -161,8 +165,9 @@ struct HomeView: View {
             }
             .padding(.vertical, UI.pillVPad)
             .padding(.horizontal, UI.pillHPad)
-            .background(.ultraThickMaterial)
-            .clipShape(Capsule())
+            .glassPill()                       // ← just this
+            .offset(y: UI.pillYOffset)
+
             // IMPORTANT: make overlays non-hit-testable so taps reach buttons
             .overlay(
                 Capsule()

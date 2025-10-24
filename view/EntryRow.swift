@@ -65,6 +65,7 @@ struct EntryRow: View {
         .overlay(
             RoundedRectangle(cornerRadius: UI.corner, style: .continuous)
                 .stroke(.white.opacity(0.08), lineWidth: 1)
+                .allowsHitTesting(false)
         )
         .shadow(color: .black.opacity(0.55), radius: 24, x: 0, y: 12)
         .overlay(
@@ -72,6 +73,7 @@ struct EntryRow: View {
                 .fill(LinearGradient(colors: [.white.opacity(0.08), .clear],
                                      startPoint: .top, endPoint: .center))
                 .blendMode(.plusLighter)
+                .allowsHitTesting(false)
         )
         .frame(maxWidth: .infinity, alignment: .leading)   // ⬅️ let the card fill the row width
         .contentShape(Rectangle())
@@ -91,7 +93,7 @@ struct EntryRow: View {
 #Preview {
     ZStack { Color.black.ignoresSafeArea()
         EntryRow(
-            entry: JournalEntry(title: "My Birthday", body: "Preview body…", isBookmarked: true)
+            entry: JournalEntry(title: "My Birthday", body: "Preview body do od dood od do od odd o dododd o do ddod od o …", isBookmarked: true)
         ) { }
         .padding(.horizontal, 20)                    // ⬅️ mirrors in-app side padding
     }
