@@ -1,5 +1,5 @@
 //
-//  SwiftUIView.swift
+//  EntryRow.swift
 //  journalApp88
 //
 //  Created by Joumana Alsagheir on 22/10/2025.
@@ -12,72 +12,94 @@ struct EntryRow: View {
     var onBookmark: () -> Void
 
     private enum UI {
-        static let corner: CGFloat = 22
-        static let pad: CGFloat = 18
-        static let titleSize: CGFloat = 22
-        static let bodySize: CGFloat = 16
+        static let corner: CGFloat = 26
+        static let padH: CGFloat = 22
+        static let padV: CGFloat = 20
+        static let titleSize: CGFloat = 23
+        static let bodySize: CGFloat = 17
         static let glyphSize: CGFloat = 20
-        static let bookmarkReserve: CGFloat = 200   // ⬅️ new: space to keep text away from bookmark
+        static let minHeight: CGFloat = 150
+        static let bookmarkPad: CGFloat = 54
     }
-    private let lavender = Color(red: 0.74, green: 0.67, blue: 0.98)
+
+    // Use your asset colors
+    private let lavender = Color("lavender")
+    private let cardBase = Color("entryRow")
     private let dateGray = Color.white.opacity(0.60)
-    private let cardFill = Color.black.opacity(0.82)
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
 
-            // CONTENT
-            VStack(alignment: .leading, spacing: 12) {
+            // ===== CONTENT =====
+            VStack(alignment: .leading, spacing: 14) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(entry.title.isEmpty ? "Title" : entry.title)
+                    Text(entry.title.isEmpty ? "My Journal" : entry.title)
                         .font(.system(size: UI.titleSize, weight: .bold, design: .rounded))
                         .foregroundStyle(lavender)
 
                     Text(dateString(entry.date))
-                        .font(.system(.caption2, design: .rounded))
+                        .font(.system(.caption, design: .rounded))
                         .foregroundStyle(dateGray)
                 }
 
                 Text(preview(entry.body))
                     .font(.system(size: UI.bodySize, weight: .regular))
                     .foregroundStyle(.white)
-                    .lineSpacing(3)
+                    .lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(UI.pad)
-            .padding(.trailing, UI.bookmarkReserve)   // ⬅️ reserve space so title/body never sit under the bookmark
+            .padding(.horizontal, UI.padH)
+            .padding(.vertical, UI.padV)
+            .padding(.trailing, UI.bookmarkPad)
 
-            // BOOKMARK
+            // ===== BOOKMARK =====
             Button(action: onBookmark) {
                 Image(systemName: entry.isBookmarked ? "bookmark.fill" : "bookmark")
                     .font(.system(size: UI.glyphSize, weight: .semibold))
                     .foregroundStyle(lavender)
+                    .frame(width: 44, height: 44, alignment: .topTrailing)
             }
-            .padding(.top, 14)
-            .padding(.trailing, 14)
+            .padding(.top, 10)
+            .padding(.trailing, 12)
             .buttonStyle(.plain)
         }
-        // CARD
+
+        // ===== CARD STYLE =====
+        .frame(maxWidth: .infinity, minHeight: UI.minHeight, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: UI.corner, style: .continuous)
-                .fill(cardFill)
+                .fill(
+                    LinearGradient(
+                        colors: [
+                            cardBase.opacity(0.95),
+                            cardBase.opacity(0.82)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
         )
         .overlay(
             RoundedRectangle(cornerRadius: UI.corner, style: .continuous)
                 .stroke(.white.opacity(0.08), lineWidth: 1)
-                .allowsHitTesting(false)
         )
-        .shadow(color: .black.opacity(0.55), radius: 24, x: 0, y: 12)
         .overlay(
             RoundedRectangle(cornerRadius: UI.corner, style: .continuous)
-                .fill(LinearGradient(colors: [.white.opacity(0.08), .clear],
-                                     startPoint: .top, endPoint: .center))
+                .fill(
+                    LinearGradient(
+                        colors: [.white.opacity(0.10), .clear],
+                        startPoint: .top,
+                        endPoint: .center
+                    )
+                )
                 .blendMode(.plusLighter)
                 .allowsHitTesting(false)
         )
-        .frame(maxWidth: .infinity, alignment: .leading)   // ⬅️ let the card fill the row width
+        .shadow(color: .black.opacity(0.55), radius: 24, x: 0, y: 12)
         .contentShape(Rectangle())
     }
+
+    // MARK: - Helpers
 
     private func dateString(_ date: Date) -> String {
         let f = DateFormatter()
@@ -86,16 +108,20 @@ struct EntryRow: View {
     }
 
     private func preview(_ text: String) -> String {
-        text.isEmpty ? "Type your Journal…" : text
+        text.isEmpty
+        ? "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec odio."
+        : text
     }
 }
 
 #Preview {
-    ZStack { Color.black.ignoresSafeArea()
-        EntryRow(
-            entry: JournalEntry(title: "My Birthday", body: "Preview body do od dood od do od odd o dododd o do ddod od o …", isBookmarked: true)
-        ) { }
-        .padding(.horizontal, 20)                    // ⬅️ mirrors in-app side padding
-    }
+    EntryRow(
+        entry: JournalEntry(
+            title: "My Birthday",
+            body: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Donec odio. Quisque volutpat mattis eros.",
+            isBookmarked: true
+        )
+    ) { }
+    .padding(.horizontal, 20)
     .preferredColorScheme(.dark)
 }

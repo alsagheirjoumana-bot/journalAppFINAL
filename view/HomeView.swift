@@ -66,27 +66,24 @@ struct HomeView: View {
 
         // Bottom glass search
         .safeAreaInset(edge: .bottom) {
-            HStack(spacing: 10) {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.secondary)
-
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                 TextField("Search", text: $vm.searchText)
                     .textInputAutocapitalization(.never)
                     .disableAutocorrection(true)
-                    .textFieldStyle(.plain)
                     .foregroundStyle(.primary)
-                    .tint(Color("lightLavender")) // cursor
-
-                Image(systemName: "mic.fill")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundStyle(.secondary)
+                Image(systemName: "mic.fill").foregroundStyle(.secondary)
             }
             .padding(.vertical, 12)
             .padding(.horizontal, 14)
-            .glassCapsuleField()           // ← use helper
-            .saturation(0.98)              // tiny tone tweak to match your mock
-            .brightness(-0.02)
+            .background(.ultraThinMaterial)
+            .clipShape(Capsule())
+            .overlay(
+                Capsule()
+                    .stroke(.white.opacity(0.06), lineWidth: 1)
+                    .allowsHitTesting(false)
+            )
+            .shadow(color: .black.opacity(0.35), radius: 18, x: 0, y: 8)
             .padding(.horizontal, UI.headerSide)
             .padding(.bottom, 8)
         }
